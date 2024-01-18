@@ -1,0 +1,91 @@
+---
+title: "Disturbance report"
+date: "`r Sys.Date()`"
+output: html_document
+params:
+  path_inp: NULL
+  resolution: NULL
+---
+
+```{r load-packages, include = FALSE}
+library(dplyr)
+library(plotly)
+```
+
+```{r read-prepare, echo = FALSE, warning = FALSE}
+tab <- read.csv(params$path_inp) %>%
+  mutate(date = strptime(date, "%Y-%m-%d")) %>%
+  mutate(year = format(date, "%Y") %>% as.integer()) %>%
+  mutate(month = format(date, "%m (%b)")) %>%
+  mutate(doy   = format(date, "%j") %>% as.integer()) %>%
+  mutate(year_month = format(date, "%Y-%m")) %>%
+  mutate(area = count * params$resolution^2 * 1e-4) # ha
+```
+
+## Disturbed area per year
+
+```{r plot-bar-year, echo = FALSE, warning = FALSE}
+tab %>% 
+  group_by(year) %>%
+  summarise_if(is.numeric, sum) %>%
+  plot_ly(
+    x = ~year,
+    y = ~area,
+    type = "bar",
+    height = 400,
+    text = ~paste0(area, " ha affected by a disturbance in ", year),
+    hoverinfo = 'text',
+    textposition = "none"
+  ) %>%
+  layout(
+    xaxis = list(title = ''), 
+    yaxis = list(title = 'area in ha'), 
+    showlegend = FALSE
+  )
+```
+
+## Disturbed area per year and month
+
+```{r plot-bar-year-month, echo = FALSE, warning = FALSE}
+tab %>% 
+  group_by(year, month) %>%
+  summarise_if(is.numeric, sum) %>%
+  plot_ly(
+    x = ~year,
+    y = ~area,
+    color = ~month,
+    type = "bar",
+    height = 400,
+    text = ~paste0(area, " ha affected by a disturbance in ", month, " ", year),
+    hoverinfo = 'text',
+    textposition = "none"
+  ) %>%
+  layout(
+    xaxis = list(title = ''),
+    yaxis = list(title = 'area in ha'),
+    barmode = 'stack',
+    showlegend = TRUE
+  )
+```
+
+## Disturbed area per month
+
+```{r plot-bar-month, echo = FALSE, warning = FALSE}
+tab %>% 
+  group_by(year_month) %>%
+  summarise_if(is.numeric, sum) %>%
+  plot_ly(
+    x = ~year_month,
+    y = ~area,
+    type = "bar",
+    height = 400,
+    text = ~paste0(area, " ha affected by a disturbance in ", year_month),
+    hoverinfo = 'text',
+    textposition = "none"
+  ) %>%
+  layout(
+    xaxis = list(title = ''), 
+    yaxis = list(title = 'area in ha'), 
+    showlegend = FALSE
+  )
+```

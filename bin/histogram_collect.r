@@ -10,9 +10,9 @@ n_args <- 2
 
 if (length(args) != n_args) {
   c(
-    "\nWrong input!",
-    "1:path_hist",
-    "2:file_output\n"
+    "\nWrong input!\n",
+    " 1: path_hist\n",
+    " 2: file_output\n"
   ) %>%
   stop()
 }

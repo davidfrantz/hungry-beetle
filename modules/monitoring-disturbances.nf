@@ -23,6 +23,7 @@ workflow disturbances_monitoring_period {
   | map{ it[0] } 
   | collect
   | disturbance_hist_collect
+  | disturbance_hist_plot
 
 }
 
@@ -41,7 +42,7 @@ process disturbance_date {
 
   """
   mkdir "$tile_ID"
-  disturbance_date.r "$params.max_cpu" "$tile_ID" "stats" "residuals" "$tile_ID/disturbance_date.tif"
+  disturbance_date.r "${params.max_cpu}" "stats" "residuals" "${tile_ID}/disturbance_date.tif" "${params.thr_std}" "${params.thr_min}"
   """
 
 }
@@ -77,6 +78,24 @@ process disturbance_hist_collect {
 
   """
   histogram_collect.r "hist" "disturbance_hist.csv"
+  """
+
+}
+
+process disturbance_hist_plot {
+
+  label 'rstats'
+
+  input:
+  path csv_table
+
+  output:
+  path "disturbance_report.html"
+
+  publishDir "$params.publish/$params.project", mode: 'copy', overwrite: true, failOnError: true
+
+  """
+  disturbance_report.sh "${csv_table}" "disturbance_report.html" "${params.resolution}"
   """
 
 }

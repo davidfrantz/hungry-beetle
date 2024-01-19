@@ -3,30 +3,36 @@
 nextflow.enable.dsl=2
 
 include { load } from './modules/load.nf'
-include { get_tiles } from './modules/force-glue.nf'
-include { analysis_masks } from './modules/force-glue.nf'
+include { force_get_tiles } from './modules/force.nf'
+include { force_analysis_masks } from './modules/force.nf'
 include { stats_reference_period } from './modules/reference-statistics.nf'
 include { residuals_monitoring_period } from './modules/monitoring-residuals.nf'
 include { disturbances_monitoring_period } from './modules/monitoring-disturbances.nf'
 
+
+/* main workflow
+-- do not run directly, use ``feed-beetle.sh`` */
 workflow {
 
+  // load input data into channels
   load()
-  
-  //load.out.datacube.view()
-  //load.out.datacube_definition.view()
-  
-  tiles = get_tiles(
+  // | view
+
+  // retrieve processing extent and spatial processing units (tiles)
+  tiles = force_get_tiles(
     load.out.aoi, 
     load.out.datacube_definition
   )
+  // | view
 
-  masks = analysis_masks(
+  // generate processing masks for which analyses should be made
+  masks = force_analysis_masks(
     load.out.mask,
     load.out.datacube_definition
   )
   //| view
 
+  // compute statistics (std dev.) in reference period
   stats = 
     load.out.datacube
     | combine(masks)
@@ -34,6 +40,7 @@ workflow {
     | stats_reference_period
     //| view
 
+  // compute residuals in monitoring period
   residuals = 
     load.out.datacube
     | combine(masks)
@@ -41,8 +48,7 @@ workflow {
     | residuals_monitoring_period
     //| view
 
-
+  // detect disturbances, and do some postprocessing-analysis
   disturbances_monitoring_period(stats, residuals)
 
 }
-

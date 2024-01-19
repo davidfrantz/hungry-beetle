@@ -1,8 +1,6 @@
-
+// load input data into channels
 workflow load {
 
-  //take:
-  
   main:
   aoi = Channel.fromPath( params.aoi )
   mask = Channel.fromPath( params.mask )

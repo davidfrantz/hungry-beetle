@@ -7,4 +7,3 @@ def multijoin(x, by){
     }
     return result
 }
-

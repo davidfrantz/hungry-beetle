@@ -19,7 +19,14 @@ workflow disturbances_monitoring_period {
   ) // join input channels by [tile ID, tile ID (X), tile ID (Y)]
   | disturbance_detection // detect disturbances
 
+//  disturbances
+//  | (force_pyramid & force_mosaic) // compute pyramids and mosaic
+
+  years = disturbances
+  | disturbance_year // year of disturbance
+
   disturbances
+  | mix(years)
   | (force_pyramid & force_mosaic) // compute pyramids and mosaic
 
   disturbances 
@@ -41,7 +48,7 @@ process disturbance_detection {
   tuple val(tile_ID), val(tile_X), val(tile_Y), path("stats/*"), path("residuals/*")
 
   output:
-  tuple path("${tile_ID}/*"), val(tile_ID), val(tile_X), val(tile_Y)
+  tuple path("${tile_ID}/disturbance_date.tif"), val(tile_ID), val(tile_X), val(tile_Y)
 
   publishDir "$params.publish/$params.project", mode: 'copy', overwrite: true, failOnError: true
 
@@ -54,6 +61,28 @@ process disturbance_detection {
     "${tile_ID}/disturbance_date.tif" \
     "${params.thr_std}" \
     "${params.thr_min}"
+  """
+
+}
+
+// year of the disturbance
+process disturbance_year {
+
+  label 'rstats'
+
+  input:
+  tuple path(disturbances), val(tile_ID), val(tile_X), val(tile_Y)
+
+  output:
+  tuple path("${tile_ID}/disturbance_year.tif"), val(tile_ID), val(tile_X), val(tile_Y)
+
+  publishDir "$params.publish/$params.project", mode: 'copy', overwrite: true, failOnError: true
+
+  """
+  mkdir "${tile_ID}"
+  disturbance_year.r \
+    "${disturbances}" \
+    "${tile_ID}/disturbance_year.tif" \
   """
 
 }

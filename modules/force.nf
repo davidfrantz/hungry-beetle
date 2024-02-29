@@ -19,7 +19,6 @@ workflow force_get_tiles {
 
 }
 
-
 // tile file is converted to csv
 // column 1: original tile ID --- X[0-9]{4}_Y[0-9]{4}
 // column 2: X ID             --- [0-9]{4}
@@ -38,7 +37,6 @@ process force_tiles_to_csv {
   """
 
 }
-
 
 // compute tiles that cover the AOI
 process force_tile_extent {
@@ -79,7 +77,6 @@ process force_analysis_masks {
   cp "${datacube_definition}" -t "maskdir"
   force-cube \
     -s "${params.resolution}" \
-    -b "mask" \
     -o "maskdir" \
     "${mask}"
   """
@@ -122,9 +119,6 @@ process force_pyramid {
   """
 
 }
-
-
-
 
 // compute mosaic
 /* Note: there is quite some workaround necessary, as Nextflow does not

@@ -25,26 +25,28 @@ workflow {
   )
   // | view
 
-  // generate processing masks for which analyses should be made
-  masks = force_analysis_masks(
-    load.out.mask,
-    load.out.datacube_definition
-  )
+  // generate or load processing masks for which analyses should be made
+  if (params.mask.is_vector) {
+    masks = force_analysis_masks(
+      load.out.mask,
+      load.out.datacube_definition
+    )
+  } else {
+    masks = load.out.mask
+  }
   //| view
 
-  // compute statistics (std dev.) in reference period
-  stats = 
-    load.out.datacube
+  combined_input = load.out.datacube
     | combine(masks)
     | combine(tiles)
+
+  // compute statistics (std dev.) in reference period
+  stats = combined_input
     | stats_reference_period
     //| view
 
   // compute residuals in monitoring period
-  residuals = 
-    load.out.datacube
-    | combine(masks)
-    | combine(tiles)
+  residuals = combined_input
     | residuals_monitoring_period
     //| view
 

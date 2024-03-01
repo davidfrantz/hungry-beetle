@@ -1,6 +1,6 @@
 include { force_parameter } from './force.nf'
 include { force_higher_level } from './force.nf'
-include { force_pyramid } from './force.nf'
+include { force_finish } from './force.nf'
 
 
 // compute residuals in monitoring period
@@ -14,12 +14,11 @@ workflow residuals_monitoring_period {
   residuals = force_parameter('TSA')  // create parameter file
   | combine(datacube_tile)   // add parameter file to input tuple
   | fill_parameter_residuals // fill out the parameter file
+  | combine(Channel.of('residuals'))
   | force_higher_level       // run higher level processing
 
   residuals
-  | force_pyramid // compute pyramids
-  /* Note: mosaic not possible as residual product is not guaranteed to 
-  -- have the same bands in each tile */
+  | force_finish // compute pyramids and mosaic
 
   emit:
   residuals
@@ -60,6 +59,7 @@ process fill_parameter_residuals {
   sed -i "/^HARMONIC_FIT_RANGE /c\\HARMONIC_FIT_RANGE = ${params.reference_start}-01-01 ${params.reference_end}-12-31" "filled_${parfile}"
   sed -i "/^HARMONIC_TREND /c\\HARMONIC_TREND = FALSE" "filled_${parfile}"
   sed -i "/^OUTPUT_NRT /c\\OUTPUT_NRT = TRUE" "filled_${parfile}"
+  sed -i "/^OUTPUT_EXPLODE /c\\OUTPUT_EXPLODE = TRUE" "filled_${parfile}"
   """
 
 }

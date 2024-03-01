@@ -47,8 +47,8 @@ if (length(f_std) != 1) {
   stop("\nToo many input images for stats\n")
 }
 
-if (length(f_res) != 1) {
-  stop("\nToo many input images for residuals\n")
+if (length(f_res) == 1) {
+  stop("\nNot enough input images for residuals\n")
 }
 
 

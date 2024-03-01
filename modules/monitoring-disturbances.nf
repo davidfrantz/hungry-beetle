@@ -1,6 +1,5 @@
 include { multijoin } from './defs.nf'
-include { force_pyramid } from './force.nf'
-include { force_mosaic } from './force.nf'
+include { force_finish } from './force.nf'
 
 
 // detect disturbances, and do some postprocessing-analysis
@@ -9,25 +8,23 @@ workflow disturbances_monitoring_period {
   take:
   stats
   residuals
-  // stats::     tuple [path higher-level files, tile ID, tile ID (X), tile ID (Y)]
-  // residuals:: tuple [path higher-level files, tile ID, tile ID (X), tile ID (Y)]
+  // stats::     tuple [path higher-level files, tile ID, tile ID (X), tile ID (Y), product]
+  // residuals:: tuple [path higher-level files, tile ID, tile ID (X), tile ID (Y), product]
 
   main:
   disturbances = multijoin(
     [stats, residuals], 
     [1, 2, 3] 
   ) // join input channels by [tile ID, tile ID (X), tile ID (Y)]
+  | map{ [it[0], it[1], it[2], it[3], it[5], 'disturbance'] }
   | disturbance_detection // detect disturbances
-
-//  disturbances
-//  | (force_pyramid & force_mosaic) // compute pyramids and mosaic
 
   years = disturbances
   | disturbance_year // year of disturbance
 
   disturbances
   | mix(years)
-  | (force_pyramid & force_mosaic) // compute pyramids and mosaic
+  | force_finish // compute pyramids and mosaic
 
   disturbances 
   | disturbance_hist // histograms of disturbance dates (for each tile)
@@ -45,20 +42,21 @@ process disturbance_detection {
   label 'multithread'
 
   input:
-  tuple val(tile_ID), val(tile_X), val(tile_Y), path("stats/*"), path("residuals/*")
+  tuple val(tile_ID), val(tile_X), val(tile_Y), path("stats/*"), path("residuals/*"), val(product)
 
   output:
-  tuple path("${tile_ID}/disturbance_date.tif"), val(tile_ID), val(tile_X), val(tile_Y)
+  tuple path("disturbance_date.tif"), val(tile_ID), val(tile_X), val(tile_Y), val(product)
 
-  publishDir "$params.publish/$params.project", mode: 'copy', overwrite: true, failOnError: true
-
+  publishDir "$params.publish/$params.project", 
+    saveAs: {fn -> "${tile_ID}/${product}/${file(fn).name}"},
+    mode: 'copy', overwrite: true, failOnError: true
+  
   """
-  mkdir "${tile_ID}"
   disturbance_detection.r \
     "${params.max_cpu}" \
     "stats" \
     "residuals" \
-    "${tile_ID}/disturbance_date.tif" \
+    "disturbance_date.tif" \
     "${params.thr_std}" \
     "${params.thr_min}"
   """
@@ -71,18 +69,19 @@ process disturbance_year {
   label 'rstats'
 
   input:
-  tuple path(disturbances), val(tile_ID), val(tile_X), val(tile_Y)
+  tuple path(disturbances), val(tile_ID), val(tile_X), val(tile_Y), val(product)
 
   output:
-  tuple path("${tile_ID}/disturbance_year.tif"), val(tile_ID), val(tile_X), val(tile_Y)
+  tuple path("disturbance_year.tif"), val(tile_ID), val(tile_X), val(tile_Y), val(product)
 
-  publishDir "$params.publish/$params.project", mode: 'copy', overwrite: true, failOnError: true
-
+  publishDir "$params.publish/$params.project", 
+    saveAs: {fn -> "${tile_ID}/${product}/${file(fn).name}"},
+    mode: 'copy', overwrite: true, failOnError: true
+  
   """
-  mkdir "${tile_ID}"
   disturbance_year.r \
     "${disturbances}" \
-    "${tile_ID}/disturbance_year.tif" \
+    "disturbance_year.tif" \
   """
 
 }
@@ -93,16 +92,16 @@ process disturbance_hist {
   label 'rstats'
 
   input:
-  tuple path(disturbance_dates), val(tile_ID), val(tile_X), val(tile_Y)
+  tuple path(disturbance_dates), val(tile_ID), val(tile_X), val(tile_Y), val(product)
 
   output:
-  tuple path("${tile_ID}_disturbance_hist.csv"), val(tile_ID), val(tile_X), val(tile_Y)
+  tuple path("*.csv"), val(tile_ID), val(tile_X), val(tile_Y), val(product)
 
   """
   mkdir "${tile_ID}"
   histogram.r \
     "${disturbance_dates}" \
-    "${tile_ID}_disturbance_hist.csv"
+    "${tile_ID}@${product}@hist.csv"
   """
 
 }
@@ -118,8 +117,9 @@ process disturbance_hist_merge {
   output:
   path "disturbance_hist.csv"
 
-  publishDir "${params.publish}/${params.project}", mode: 'copy', overwrite: true, failOnError: true
-
+  publishDir "$params.publish/$params.project", 
+    mode: 'copy', overwrite: true, failOnError: true
+  
   """
   histogram_merge.r \
     "hist" \

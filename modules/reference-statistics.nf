@@ -1,7 +1,6 @@
 include { force_parameter } from './force.nf'
 include { force_higher_level } from './force.nf'
-include { force_pyramid } from './force.nf'
-include { force_mosaic } from './force.nf'
+include { force_finish } from './force.nf'
 
 
 // compute statistics (std dev.) in reference period
@@ -15,10 +14,11 @@ workflow stats_reference_period {
   stats = force_parameter('TSA') // create parameter file
   | combine(datacube_tile) // add parameter file to input tuple
   | fill_parameter_stats   // fill out the parameter file
+  | combine(Channel.of('stats'))
   | force_higher_level     // run higher level processing
 
   stats
-  | (force_pyramid & force_mosaic) // compute pyramids and mosaic
+  | force_finish // compute pyramids and mosaic
 
   emit:
   stats
@@ -58,6 +58,7 @@ process fill_parameter_stats {
   sed -i "/^INTERPOLATE /c\\INTERPOLATE = NONE" "filled_${parfile}"
   sed -i "/^OUTPUT_STM /c\\OUTPUT_STM = TRUE" "filled_${parfile}"
   sed -i "/^STM /c\\STM = STD" "filled_${parfile}"
+  sed -i "/^OUTPUT_EXPLODE /c\\OUTPUT_EXPLODE = TRUE" "filled_${parfile}"
   """
 
 }

@@ -53,8 +53,7 @@ process force_tile_extent {
   """
   force-tile-extent \
     "${aoi}" \
-    . \
-    tiles.txt
+    -a tiles.txt
   """
 
 }
@@ -83,91 +82,56 @@ process force_analysis_masks {
 
 }
 
-// compute pyramids
-/* Note: there is a workaround necessary, as gdaladdo (in force-pyramid) 
--- resolves the nextflow symlinks, hence creating the output file at the
--- physical(!) location of the input image. Using the VRT as an middle
--- layer prevents this, and does not generate too much additional data.
--- The overviews need to be renamed afterward as if they were generated
--- based on the tifs, not the vrt. 
--- This workaround keeps the cache alive. */
-process force_pyramid {
-
-  label 'force'
-
-  input:
-  tuple path(images), val(tile_ID), val(tile_X), val(tile_Y)
-
-  output:
-  path "$tile_ID/*.ovr"
-
-  publishDir "${params.publish}/${params.project}", mode: 'copy', overwrite: true, failOnError: true
-
-  """
-  mkdir "${tile_ID}"
-  for i in *.tif; do
-    gdal_translate \
-      -of VRT \
-      "\$i" \
-      "${tile_ID}/\${i%.*}.vrt"
-    force-pyramid \
-      "${tile_ID}/\${i%.*}.vrt"
-    rename \
-      's/.vrt/.tif/' \
-      "${tile_ID}/\${i%.*}.vrt.ovr"
-  done
-  """
-
-}
-
-// compute mosaic
-/* Note: there is quite some workaround necessary, as Nextflow does not
--- permit staging multiple files with the same name in subfolders of
--- different name, i.e., the usual tile/image structure in a datacube.
--- This workaround solves this issue using the VRT format as a middle
--- layer. Doing so does not generate too much additional data, and has
--- the additional benefit of keeping the cache alive.
--- If there are multipe basenames present, mosaics will be separately
--- generated for all of them. */
-workflow force_mosaic {
+// compute pyramids and mosaic
+workflow force_finish {
 
   take:
   datacube
-  // tuple [path files, tile ID, tile ID (X), tile ID (Y)]
+  // tuple [path files, tile ID, tile ID (X), tile ID (Y), product]
 
   main:
-  datacube
-  | map{ it[0] } // select the files only
-  | flatten // flatten the tuple
-  | filter( ~/.*\.tif$/ ) // select tif files only (may contain .aux.xml etc.)
-  | map{ [it, it.simpleName, it.parent.name] } // tuple [path, base name without extension, tile name]
-  | force_virtual_flat // convert to flat virtual format
-  | groupTuple(by: 1) // group by base name
-  | force_mosaic_core // compute a mosaic
+  virtual = datacube
+  | transpose
+  | filter({ it[0].extension.matches("tif") }) // select tif files only (may contain .aux.xml etc.)
+  | map{ [it[0], it[0].simpleName, it[1], it[2], it[3], it[4]] }
+  | force_pyramid // convert to flat virtual format, compute pyramids
+  | groupTuple(by: [2,6]) // group by base name and product
+  | force_mosaic // compute mosaic
   //| view
 
 }
 
 // create flat virtual files
 /* This process converts a tile/image.tif file to a virtual
--- tile@image.vrt file to help resolve Nextflow staging limitations
--- and help to keep the Nextflow cache alive. */
-process force_virtual_flat {
+-- tile@product@image.vrt file to help resolve Nextflow staging limitations
+-- and help to keep the Nextflow cache alive. 
+-- Plus, it computes pyramids obviously.
+-- Note: there is a workaround necessary here, as gdaladdo (in force-pyramid) 
+-- resolves the nextflow symlinks, hence creating the output file at the
+-- physical(!) location of the input image. Using the VRT as an middle
+-- layer prevents this, and does not generate too much additional data.
+-- This workaround keeps the cache alive. */
+process force_pyramid {
 
   label 'force'
 
   input:
-  tuple path(image), val(base), val(tile_ID)
+  tuple path(image), val(base), val(tile_ID), val(tile_X), val(tile_Y), val(product)
 
   output:
-  tuple path("${tile_ID}@${base}.vrt"), val(base)
+  tuple path("*.vrt"), path("*.ovr"), val(base), val(tile_ID), val(tile_X), val(tile_Y), val(product)
+
+  publishDir "${params.publish}/${params.project}", 
+    pattern: '*.ovr',
+    saveAs: {fn -> "${tile_ID}/${product}/${image}.ovr"}, 
+    mode: 'copy', overwrite: true, failOnError: true
 
   """
-  outfile=${image.name}
   gdal_translate \
     -of VRT \
     "${image}" \
-    "${tile_ID}@${base}.vrt"
+    "${tile_ID}@${product}@${base}.vrt"
+  force-pyramid "${tile_ID}@${product}@${base}.vrt"
   """
 
 }
@@ -175,21 +139,31 @@ process force_virtual_flat {
 // recode of force_mosaic
 /* Note: this is a re-implementation of the core functionality of `force-mosaic`
 -- to enable usage of VRT images.
--- Use this only use with the ``force_mosaic`` workflow, not as standalone process.*/
-process force_mosaic_core {
+-- Use this only use with the ``force_finish`` workflow, not as standalone process.
+-- There is quite some workaround necessary, as Nextflow does not
+-- permit staging multiple files with the same name in subfolders of
+-- different name, i.e., the usual tile/image structure in a datacube.
+-- This workaround solves this issue using the VRT format as a middle
+-- layer. Doing so does not generate too much additional data, and has
+-- the additional benefit of keeping the cache alive.
+-- If there are multipe basenames present, mosaics will be separately
+-- generated for all of them. */
+process force_mosaic {
 
   label 'force'
 
   input:
-  tuple path(images), val(base)
+  tuple path(images), path(overviews), val(base), val(tile_ID), val(tile_X), val(tile_Y), val(product)
 
   output:
   path "mosaic/*"
 
-  publishDir "${params.publish}/${params.project}", mode: 'copy', overwrite: true, failOnError: true
+  publishDir "${params.publish}/${params.project}", 
+    saveAs: {fn -> "mosaic/${product}/${base}.vrt"}, 
+    mode: 'copy', overwrite: true, failOnError: true
 
   """
-  mkdir mosaic
+  mkdir -p mosaic
   ls *.vrt > files.txt
   nodata=`head -n 1 files.txt | xargs gdalinfo | grep 'NoData Value' | head -1 | cut -d '=' -f 2`
   gdalbuildvrt \
@@ -197,7 +171,8 @@ process force_mosaic_core {
     -vrtnodata \$nodata \
     -input_file_list files.txt \
     mosaic/${base}.vrt
-  sed -i -E 's+(X[0-9]{4}_Y[0-9]{4})@+../\\1/+g' mosaic/${base}.vrt
+  sed -i -E 's+(X[0-9]{4}_Y[0-9]{4})+../../\\1+g' mosaic/${base}.vrt
+  sed -i 's+@+/+g' mosaic/${base}.vrt
   sed -i 's/.vrt/.tif/g' mosaic/${base}.vrt
   sed -i 's/relativeToVRT="0"/relativeToVRT="1"/g' mosaic/${base}.vrt
   """
@@ -231,12 +206,14 @@ process force_higher_level {
   label 'multithread'
 
   input:
-  tuple path(parfile), path(datacube), path(maskdir), val(tile_ID), val(tile_X), val(tile_Y)
+  tuple path(parfile), path(datacube), path(maskdir), val(tile_ID), val(tile_X), val(tile_Y), val(product)
 
   output:
-  tuple path("${tile_ID}/*"), val(tile_ID), val(tile_X), val(tile_Y), optional: true
+  tuple path("${tile_ID}/*"), val(tile_ID), val(tile_X), val(tile_Y), val(product), optional: true
 
-  publishDir "${params.publish}/${params.project}", mode: 'copy', overwrite: true, failOnError: true
+  publishDir "${params.publish}/${params.project}", 
+    saveAs: {fn -> "${tile_ID}/${product}/${file(fn).name}"}, 
+    mode: 'copy', overwrite: true, failOnError: true
 
   """
   force-higher-level "${parfile}"

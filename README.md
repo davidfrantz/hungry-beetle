@@ -12,7 +12,6 @@ Nom nom.
 
 Beetle happy.
 
-*(see ``beetle.config`` for parameterization)*
 
 ## Requirements
 
@@ -27,5 +26,6 @@ Beetle happy.
 - GIS layer for area of interest
 - GIS layer for analysis area OR already cubed raster masks
 
+see ``beetle.config`` for parameterization
 
 (C) David Frantz 2024

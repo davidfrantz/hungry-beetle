@@ -12,6 +12,7 @@ Nom nom.
 
 Beetle happy.
 
+*(see ``beetle.config`` for parameterization)*
 
 ## Requirements
 

@@ -23,3 +23,4 @@ COPY --chown=docker:docker --from=builder $HOME/bin $HOME/bin
 
 WORKDIR /home/docker
 
+CMD ["disturbance_detection"]

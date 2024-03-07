@@ -90,12 +90,17 @@ workflow force_finish {
   // tuple [path files, tile ID, tile ID (X), tile ID (Y), product]
 
   main:
-  virtual = datacube
+  all_images = datacube
   | transpose
   | filter({ it[0].extension.matches("tif") }) // select tif files only (may contain .aux.xml etc.)
-  | map{ [it[0], it[0].simpleName, it[1], it[2], it[3], it[4]] }
+  //| map{ [it[1], it[2], it[3], it[4], it[0], it[0].simpleName ] } // tile ID, X, Y, product, filename, basename
+//
+  //all_images
+  | groupTuple(by: [1,2,3,4]) // group by tile ID, X, Y, product
   | force_pyramid // convert to flat virtual format, compute pyramids
-  | groupTuple(by: [2,6]) // group by base name and product
+  | transpose
+  | map{ [ it[1], it[2], it[3], it[4], it[5], it[0].simpleName ] } // vrt, tile ID, X, Y, product, basename
+  | groupTuple(by: [4,5]) // group by base name and product
   | force_mosaic // compute mosaic
   //| view
 
@@ -114,24 +119,26 @@ workflow force_finish {
 process force_pyramid {
 
   label 'force'
+  label 'multithread'
 
   input:
-  tuple path(image), val(base), val(tile_ID), val(tile_X), val(tile_Y), val(product)
+  tuple path("input/*"), val(tile_ID), val(tile_X), val(tile_Y), val(product)
 
   output:
-  tuple path("*.vrt"), path("*.ovr"), val(base), val(tile_ID), val(tile_X), val(tile_Y), val(product)
+  tuple path("*.ovr"), path("*.vrt"), val(tile_ID), val(tile_X), val(tile_Y), val(product)
 
   publishDir "${params.publish}/${params.project}", 
     pattern: '*.ovr',
-    saveAs: {fn -> "${tile_ID}/${product}/${image}.ovr"}, 
+    saveAs: {fn -> "${tile_ID}/${product}/${file(fn).name}"}, 
     mode: 'copy', overwrite: true, failOnError: true
 
   """
-  gdal_translate \
-    -of VRT \
-    "${image}" \
-    "${tile_ID}@${product}@${base}.vrt"
-  force-pyramid "${tile_ID}@${product}@${base}.vrt"
+  ls input/*.tif | \
+    parallel -j $params.max_cpu \
+      "gdal_translate -of VRT {} {/.}.vrt; \
+       force-pyramid {/.}.vrt; \
+       rename 's/.vrt/.tif/' {/.}.vrt.ovr; \
+       mv {/.}.vrt ${tile_ID}@${product}@{/.}.vrt"
   """
 
 }
@@ -151,15 +158,15 @@ process force_pyramid {
 process force_mosaic {
 
   label 'force'
-
+  
   input:
-  tuple path(images), path(overviews), val(base), val(tile_ID), val(tile_X), val(tile_Y), val(product)
+  tuple path(vrt), val(tile_ID), val(tile_X), val(tile_Y), val(product), val(base)
 
   output:
   path "mosaic/*"
 
   publishDir "${params.publish}/${params.project}", 
-    saveAs: {fn -> "mosaic/${product}/${base}.vrt"}, 
+    saveAs: {fn -> "mosaic/${product}/${file(fn).name}"}, 
     mode: 'copy', overwrite: true, failOnError: true
 
   """

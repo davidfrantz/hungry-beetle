@@ -17,9 +17,9 @@ RUN echo "building hungry-beetle" && \
   make && \
   make install
 
-#FROM davidfrantz/hungry-beetle:latest as hungry-beetle
+FROM davidfrantz/hungry-beetle:latest as hungry-beetle
 
-#COPY --chown=docker:docker --from=builder $HOME/bin $HOME/bin
+COPY --chown=docker:docker --from=builder $HOME/bin $HOME/bin
 
 WORKDIR /home/docker
 

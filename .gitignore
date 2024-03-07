@@ -1,5 +1,6 @@
 work/
 input/
 output/
+src/temp/
 .nextflow/
 .nextflow*

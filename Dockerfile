@@ -16,7 +16,7 @@ RUN echo "building hungry-beetle" && \
   make && \
   make install
 
-FROM davidfrantz/hungry-beetle:latest as hungry-beetle
+#FROM davidfrantz/hungry-beetle:latest as hungry-beetle
 
 WORKDIR /home/docker
 

@@ -1,4 +1,4 @@
-FROM ubuntu:24.04 as builder
+FROM osgeo/gdal as builder
 
 # disable interactive frontends
 ENV DEBIAN_FRONTEND=noninteractive 

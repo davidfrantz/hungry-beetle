@@ -34,7 +34,7 @@ DUTILS=src/utils
 DTMP=src/temp
 DMOD=src/temp/modules
 DBIN=src/temp/bin
-DINSTALL=/usr/local/bin
+DINSTALL=$(HOME)/bin
 
 ### TARGETS
 

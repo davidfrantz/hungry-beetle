@@ -5,6 +5,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # Environment variables
 ENV SOURCE_DIR $HOME/src/hungry-beetle
+ENV INSTALL_DIR $HOME/bin
 
 # Copy src to SOURCE_DIR
 RUN mkdir -p $SOURCE_DIR
@@ -17,6 +18,8 @@ RUN echo "building hungry-beetle" && \
   sudo make install
 
 #FROM davidfrantz/hungry-beetle:latest as hungry-beetle
+
+COPY --chown=docker:docker --from=builder $HOME/bin $HOME/bin
 
 WORKDIR /home/docker
 

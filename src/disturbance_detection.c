@@ -16,7 +16,6 @@
 
 typedef struct {
   int n;
-  int ncpu;
   char path_stats[STRLEN];
   char path_residuals[STRLEN];
   char file_output[STRLEN];
@@ -30,7 +29,6 @@ void usage(char *exe, int exit_code){
   printf("Usage: %s -j cpus -s path_stats -r path_residuals\n", exe);
   printf("          -o file_output -d threshold_std -m threshold_min\n");
   printf("\n");
-  printf("  -j = number of cpus\n");
   printf("  -s = path to statistics\n");
   printf("  -r = path to residuals\n");
   printf("  -o = output file (.tif)\n");
@@ -43,20 +41,12 @@ void usage(char *exe, int exit_code){
 }
 
 void parse_args(int argc, char *argv[], args_t *args){
-int opt, received_n = 0, expected_n = 6;
+int opt, received_n = 0, expected_n = 5;
 
   opterr = 0;
 
-  while ((opt = getopt(argc, argv, "j:s:r:o:d:m:")) != -1){
+  while ((opt = getopt(argc, argv, "s:r:o:d:m:")) != -1){
     switch(opt){
-      case 'j':
-        args->ncpu = atoi(optarg);
-        if (args->ncpu < 1){
-          fprintf(stderr, "cpus must be >= 1\n");
-          usage(argv[0], FAILURE);  
-        }
-        received_n++;
-        break;
       case 's':
         copy_string(args->path_stats, STRLEN, optarg);
         received_n++;
@@ -220,7 +210,7 @@ args_t args;
 dir_t files_residuals;
 dir_t files_stats;
 date_t *dates;
-int p, i, j, nx, ny, nc;
+int i, j, nx, ny, nc;
 int d, nd;
 
   parse_args(argc, argv, &args);

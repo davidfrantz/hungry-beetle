@@ -38,8 +38,7 @@ workflow disturbances_monitoring_period {
 // detect the disturbances
 process disturbance_detection {
 
-  label 'rstats'
-  label 'multithread'
+  label 'beetle'
 
   input:
   tuple val(tile_ID), val(tile_X), val(tile_Y), path("stats/*"), path("residuals/*"), val(product)
@@ -52,13 +51,12 @@ process disturbance_detection {
     mode: 'copy', overwrite: true, failOnError: true
   
   """
-  disturbance_detection.r \
-    "${params.max_cpu}" \
-    "stats" \
-    "residuals" \
-    "disturbance_date.tif" \
-    "${params.thr_std}" \
-    "${params.thr_min}"
+  disturbance_detection \
+    -s "stats" \
+    -r "residuals" \
+    -o "disturbance_date.tif" \
+    -d "${params.thr_std}" \
+    -m "${params.thr_min}"
   """
 
 }

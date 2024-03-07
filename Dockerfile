@@ -1,4 +1,4 @@
-FROM osgeo/gdal as builder
+FROM davidfrantz/base as builder
 
 # disable interactive frontends
 ENV DEBIAN_FRONTEND=noninteractive 
@@ -15,6 +15,8 @@ COPY --chown=docker:docker . .
 RUN echo "building hungry-beetle" && \
   make && \
   make install
+
+FROM davidfrantz/hungry-beetle:latest as hungry-beetle
 
 WORKDIR /home/docker
 

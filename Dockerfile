@@ -1,4 +1,4 @@
-FROM davidfrantz/base as builder
+FROM davidfrantz/base:latest as builder
 
 # disable interactive frontends
 ENV DEBIAN_FRONTEND=noninteractive 
@@ -19,7 +19,7 @@ RUN echo "building hungry-beetle" && \
 
 #FROM davidfrantz/hungry-beetle:latest as hungry-beetle
 
-COPY --chown=docker:docker --from=builder $HOME/bin $HOME/bin
+#COPY --chown=docker:docker --from=builder $HOME/bin $HOME/bin
 
 WORKDIR /home/docker
 

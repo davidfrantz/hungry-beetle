@@ -81,7 +81,7 @@ clean:
 
 check:
 	$(foreach exec,$(EXE_POST),\
-      $(if $(shell which $(BINDIR)/$(exec)), \
+      $(if $(shell which $(DINSTALL)/$(exec)), \
 	    $(info $(exec) installed), \
 		$(error $(exec) was not installed properly!))) 
 

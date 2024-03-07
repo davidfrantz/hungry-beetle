@@ -14,7 +14,7 @@ COPY --chown=docker:docker . .
 # Build, install
 RUN echo "building hungry-beetle" && \
   make && \
-  make install
+  sudo make install
 
 #FROM davidfrantz/hungry-beetle:latest as hungry-beetle
 

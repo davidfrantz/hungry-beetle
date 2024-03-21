@@ -44,7 +44,7 @@ process disturbance_detection {
   tuple val(tile_ID), val(tile_X), val(tile_Y), path("stats/*"), path("residuals/*"), val(product)
 
   output:
-  tuple path("disturbance_date.tif"), val(tile_ID), val(tile_X), val(tile_Y), val(product)
+  tuple path("disturbance_date.tif"), val(tile_ID), val(tile_X), val(tile_Y), val(product), optional: true
 
   publishDir "$params.publish/$params.project", 
     saveAs: {fn -> "${tile_ID}/${product}/${file(fn).name}"},

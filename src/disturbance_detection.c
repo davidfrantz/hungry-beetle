@@ -21,6 +21,7 @@ typedef struct {
   char file_output[STRLEN];
   float threshold_std;
   float threshold_min;
+  int direction;
 } args_t;
 
 void usage(char *exe, int exit_code){

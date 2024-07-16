@@ -28,7 +28,7 @@ void usage(char *exe, int exit_code){
 
 
   printf("Usage: %s -j cpus -s path_stats -r path_residuals\n", exe);
-  printf("          -o file_output -d threshold_std -m threshold_min\n");
+  printf("          -o file_output -d threshold_std -m threshold_min -e direction\n");
   printf("\n");
   printf("  -s = path to statistics\n");
   printf("  -r = path to residuals\n");
@@ -49,7 +49,7 @@ int opt, received_n = 0, expected_n = 6;
 
   opterr = 0;
 
-  while ((opt = getopt(argc, argv, "s:r:o:d:m:")) != -1){
+  while ((opt = getopt(argc, argv, "s:r:o:d:m:e:")) != -1){
     switch(opt){
       case 's':
         copy_string(args->path_stats, STRLEN, optarg);
@@ -351,7 +351,7 @@ int number, candidate;
            residuals[d][j] > (args.threshold_std * stats[j]) &&
            residuals[d][j] > args.threshold_min) ||
           (args.direction < 0 && 
-           residuals[d][j] < (args.threshold_std * stats[j]) &&
+           residuals[d][j] < (-1 * args.threshold_std * stats[j]) &&
            residuals[d][j] < args.threshold_min)
         ){
           number++;

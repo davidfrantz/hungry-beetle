@@ -56,7 +56,8 @@ process disturbance_detection {
     -r "residuals" \
     -o "disturbance_date.tif" \
     -d "${params.thr_std}" \
-    -m "${params.thr_min}"
+    -m "${params.thr_min}" \
+    -e "${params.thr_direction}"
   """
 
 }

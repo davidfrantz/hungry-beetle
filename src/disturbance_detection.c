@@ -34,6 +34,9 @@ void usage(char *exe, int exit_code){
   printf("  -o = output file (.tif)\n");
   printf("  -d = standard deviation threshold\n");
   printf("  -m = minimum residuum threshold\n");
+  printf("  -e = direction of testing the threshold\n");
+  printf("       +1 for 'greater than' test\n");
+  printf("       -1 for 'less than' test\n");
   printf("\n");
 
   exit(exit_code);
@@ -41,7 +44,7 @@ void usage(char *exe, int exit_code){
 }
 
 void parse_args(int argc, char *argv[], args_t *args){
-int opt, received_n = 0, expected_n = 5;
+int opt, received_n = 0, expected_n = 6;
 
   opterr = 0;
 
@@ -73,6 +76,10 @@ int opt, received_n = 0, expected_n = 5;
           fprintf(stderr, "threshold_min must be >= 1\n");
           usage(argv[0], FAILURE);  
         }
+        received_n++;
+        break;
+      case 'e':
+        args->direction = atoi(optarg);
         received_n++;
         break;
       case '?':
@@ -338,8 +345,14 @@ int number, candidate;
         // reset counting when starting new year
         if (d > 0 && dates[d].year != dates[d-1].year) number = 0;
 
-        if (residuals[d][j] > (args.threshold_std * stats[j]) &&
-            residuals[d][j] > args.threshold_min){
+        if (
+          (args.direction > 0 && 
+           residuals[d][j] > (args.threshold_std * stats[j]) &&
+           residuals[d][j] > args.threshold_min) ||
+          (args.direction < 0 && 
+           residuals[d][j] < (args.threshold_std * stats[j]) &&
+           residuals[d][j] < args.threshold_min)
+        ){
           number++;
           if (number == 1) candidate = d;
           if (number == 3){

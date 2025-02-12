@@ -163,7 +163,7 @@ date_t d;
 int i, number = 0, substring = 0;
 
 
-  for (i=0; i<strlen(bname); i++){
+  for (i=strlen(bname)-1; i>=0; i--){
 
   
     if (isdigit(bname[i])){

@@ -168,7 +168,6 @@ int i, number = 0, substring = 0;
   
     if (isdigit(bname[i])){
 
-      if (number == 0) substring = i;
       number++;
 
     } else {
@@ -180,6 +179,8 @@ int i, number = 0, substring = 0;
     //printf("%d, %c, %d, %d\n", i, bname[i], number, substring);
 
     if (number == 8){
+
+      substring = i;
 
       strncpy(cy, bname+substring,   4); cy[4] = '\0';
       strncpy(cm, bname+substring+4, 2); cm[2] = '\0';

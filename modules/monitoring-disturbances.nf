@@ -94,7 +94,7 @@ process disturbance_hist {
   tuple path(disturbance_dates), val(tile_ID), val(tile_X), val(tile_Y), val(product)
 
   output:
-  tuple path("*.csv"), val(tile_ID), val(tile_X), val(tile_Y), val(product)
+  tuple path("*.csv"), val(tile_ID), val(tile_X), val(tile_Y), val(product), optional: true
 
   """
   mkdir "${tile_ID}"

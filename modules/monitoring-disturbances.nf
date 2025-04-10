@@ -18,6 +18,7 @@ workflow disturbances_monitoring_period {
   ) // join input channels by [tile ID, tile ID (X), tile ID (Y)]
   | map{ [it[0], it[1], it[2], it[3], it[5], 'disturbance'] }
   | disturbance_detection // detect disturbances
+  | filter_small_disturbances // remove small objects
 
   years = disturbances
   | disturbance_year // year of disturbance
@@ -44,20 +45,43 @@ process disturbance_detection {
   tuple val(tile_ID), val(tile_X), val(tile_Y), path("stats/*"), path("residuals/*"), val(product)
 
   output:
-  tuple path("disturbance_date.tif"), val(tile_ID), val(tile_X), val(tile_Y), val(product), optional: true
+  tuple path("disturbances.tif"), val(tile_ID), val(tile_X), val(tile_Y), val(product), optional: true
 
-  publishDir "$params.publish/$params.project", 
-    saveAs: {fn -> "${tile_ID}/${product}/${file(fn).name}"},
-    mode: 'copy', overwrite: true, failOnError: true
+  //publishDir "$params.publish/$params.project", 
+  //  saveAs: {fn -> "${tile_ID}/${product}/${file(fn).name}"},
+  //  mode: 'copy', overwrite: true, failOnError: true
   
   """
   disturbance_detection \
     -s "stats" \
     -r "residuals" \
-    -o "disturbance_date.tif" \
+    -o "disturbances.tif" \
     -d "${params.thr_std}" \
     -m "${params.thr_min}" \
     -e "${params.thr_direction}"
+  """
+
+}
+
+process filter_small_disturbances {
+
+  label 'mmu'
+
+  input:
+  tuple path(disturbances), val(tile_ID), val(tile_X), val(tile_Y), val(product)
+
+  output:
+  tuple path("disturbance_date.tif"), val(tile_ID), val(tile_X), val(tile_Y), val(product)
+
+  publishDir "$params.publish/$params.project", 
+    saveAs: {fn -> "${tile_ID}/${product}/${file(fn).name}"},
+    mode: 'copy', overwrite: true, failOnError: true
+
+  """
+  mmu \
+    "${disturbances}" \
+    "disturbance_date.tif" \
+    "${params.mmu}"
   """
 
 }

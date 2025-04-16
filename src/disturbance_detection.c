@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 /** Geospatial Data Abstraction Library (GDAL) **/
 #include "gdal.h"       // public (C callable) GDAL entry points
@@ -19,6 +20,7 @@ typedef struct {
   char path_stats[STRLEN];
   char path_residuals[STRLEN];
   char file_output[STRLEN];
+  bool counterbreak
   float threshold_std;
   float threshold_min;
   int direction;

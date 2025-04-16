@@ -20,7 +20,7 @@ typedef struct {
   char path_stats[STRLEN];
   char path_residuals[STRLEN];
   char file_output[STRLEN];
-  bool counterbreak,
+  bool counterbreak;
   float threshold_std;
   float threshold_min;
   int direction;

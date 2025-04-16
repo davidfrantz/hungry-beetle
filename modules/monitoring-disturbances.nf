@@ -56,6 +56,7 @@ process disturbance_detection {
     -s "stats" \
     -r "residuals" \
     -o "disturbances.tif" \
+    -c "${params.counterbreak}" \
     -d "${params.thr_std}" \
     -m "${params.thr_min}" \
     -e "${params.thr_direction}"

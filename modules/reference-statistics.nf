@@ -33,7 +33,7 @@ process fill_parameter_stats {
   tuple path(parfile), path(datacube), path(maskdir), val(tile_ID), val(tile_X), val(tile_Y)
 
   output:
-  tuple path("filled_${parfile}"), path(maskdir), path(datacube), val(tile_ID), val(tile_X), val(tile_Y)
+  tuple path("filled_${parfile}"), path(datacube), path(maskdir), val(tile_ID), val(tile_X), val(tile_Y)
 
   """
   cp "$parfile" "filled_${parfile}"

@@ -28,11 +28,13 @@ void usage(char *exe, int exit_code){
 
 
   printf("Usage: %s -j cpus -s path_stats -r path_residuals\n", exe);
-  printf("          -o file_output -d threshold_std -m threshold_min -e direction\n");
+  printf("          -o file_output -c true|false -d threshold_std -m threshold_min -e direction\n");
   printf("\n");
   printf("  -s = path to statistics\n");
   printf("  -r = path to residuals\n");
   printf("  -o = output file (.tif)\n");
+  printf("  -c = counterbreak (reset counting when starting new year)\n");
+  printf("       true or false\n");
   printf("  -d = standard deviation threshold\n");
   printf("  -m = minimum residuum threshold\n");
   printf("  -e = direction of testing the threshold\n");
@@ -45,11 +47,11 @@ void usage(char *exe, int exit_code){
 }
 
 void parse_args(int argc, char *argv[], args_t *args){
-int opt, received_n = 0, expected_n = 6;
+int opt, received_n = 0, expected_n = 7;
 
   opterr = 0;
 
-  while ((opt = getopt(argc, argv, "s:r:o:d:m:e:")) != -1){
+  while ((opt = getopt(argc, argv, "s:r:o:d:m:e:c:")) != -1){
     switch(opt){
       case 's':
         copy_string(args->path_stats, STRLEN, optarg);
@@ -61,6 +63,17 @@ int opt, received_n = 0, expected_n = 6;
         break;
       case 'o':
         copy_string(args->file_output, STRLEN, optarg);
+        received_n++;
+        break;
+      case 'c':
+        if (strcmp(optarg, "true") == 0){
+          args->counterbreak = true;
+        } else if (strcmp(optarg, "false") == 0){
+          args->counterbreak = false;
+        } else {
+          fprintf(stderr, "counterbreak must be 'true' or 'false'\n");
+          usage(argv[0], FAILURE);  
+        }
         received_n++;
         break;
       case 'd':
@@ -345,7 +358,7 @@ int number, candidate;
         if (residuals[d][j] == nodata_residuals[d]) continue;
 
         // reset counting when starting new year
-        if (d > 0 && dates[d].year != dates[d-1].year) number = 0;
+        if (args.counterbreak && d > 0 && dates[d].year != dates[d-1].year) number = 0;
 
         if (
           (args.direction > 0 && 

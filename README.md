@@ -4,6 +4,11 @@
 
 *(Banner generated with https://hotpot.ai/art-generator)*
 
+Note that current development is being done in https://github.com/ForestPulse/hungry-beetle
+
+
+
+
 Beetle hungry.
 
 Run with ``./feed-beetle.sh``

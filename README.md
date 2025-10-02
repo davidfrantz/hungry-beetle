@@ -1,10 +1,12 @@
 # Hungry Beetle
 
+⚠️ Note that current development is being done in https://github.com/ForestPulse/hungry-beetle
+Please use that repository for downloading code or communicating with the developers.
+
+
 ![Beetle Logo](images/banner.png)
 
 *(Banner generated with https://hotpot.ai/art-generator)*
-
-Note that current development is being done in https://github.com/ForestPulse/hungry-beetle
 
 
 
